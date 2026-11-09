@@ -65,13 +65,22 @@ def _anchor(text: str, today: date) -> date:
         if weekday[1] == "next":
             return today + timedelta(days=difference or 7)
         return today + timedelta(days=difference - 7)
-    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
-        return date.fromisoformat(text)
+    numeric = re.fullmatch(r"([0-9]{4})([/-])([0-9]{1,2})\2([0-9]{1,2})", text)
+    if numeric:
+        return date(int(numeric[1]), int(numeric[3]), int(numeric[4]))
+    numeric = re.fullmatch(r"([0-9]{1,2})([/-])([0-9]{1,2})\2([0-9]{4})", text)
+    if numeric:
+        return date(int(numeric[4]), int(numeric[1]), int(numeric[3]))
     absolute = re.fullmatch(
         r"([a-z]+) (\d{1,2})(?:st|nd|rd|th)?(?:\s*,\s*| )(\d{4})", text
     )
     if absolute and absolute[1] in _MONTHS:
         return date(int(absolute[3]), _MONTHS[absolute[1]], int(absolute[2]))
+    absolute = re.fullmatch(
+        r"(\d{1,2})(?:st|nd|rd|th)? ([a-z]+)(?:\s*,\s*| )(\d{4})", text
+    )
+    if absolute and absolute[2] in _MONTHS:
+        return date(int(absolute[3]), _MONTHS[absolute[2]], int(absolute[1]))
     raise ValueError(f"Unrecognized date expression: {text!r}")
 
 
@@ -82,6 +91,8 @@ def parse(s: str, today: date | None = None) -> date:
     applied before weeks/days, clamping to the destination month's last day.
     Next/last weekdays always exclude the reference day. Nested before/after
     expressions are evaluated from the innermost anchor outward.
+    Numeric dates use YYYY/MM/DD or MM/DD/YYYY order, with either slashes or
+    hyphens and one or two digits for the month and day.
 
     Raise ValueError for unrecognized expressions or dates outside years 1–9999.
     """
