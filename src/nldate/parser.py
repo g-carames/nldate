@@ -9,6 +9,7 @@ _MONTHS = {
     for number in range(1, 13)
     for name in (calendar.month_name[number], calendar.month_abbr[number])
 }
+_MONTHS["sept"] = 9
 _WEEKDAYS = {name.lower(): number for number, name in enumerate(calendar.day_name)}
 _OFFSET = re.compile(r"(\d+)\s+(days?|weeks?|months?|years?)")
 
@@ -72,12 +73,12 @@ def _anchor(text: str, today: date) -> date:
     if numeric:
         return date(int(numeric[4]), int(numeric[1]), int(numeric[3]))
     absolute = re.fullmatch(
-        r"([a-z]+) (\d{1,2})(?:st|nd|rd|th)?(?:\s*,\s*| )(\d{4})", text
+        r"([a-z]+)\.? (\d{1,2})(?:st|nd|rd|th)?(?:\s*,\s*| )(\d{4})\.?", text
     )
     if absolute and absolute[1] in _MONTHS:
         return date(int(absolute[3]), _MONTHS[absolute[1]], int(absolute[2]))
     absolute = re.fullmatch(
-        r"(\d{1,2})(?:st|nd|rd|th)? ([a-z]+)(?:\s*,\s*| )(\d{4})", text
+        r"(\d{1,2})(?:st|nd|rd|th)? ([a-z]+)\.?(?:\s*,\s*| )(\d{4})\.?", text
     )
     if absolute and absolute[2] in _MONTHS:
         return date(int(absolute[3]), _MONTHS[absolute[2]], int(absolute[1]))
@@ -93,6 +94,8 @@ def parse(s: str, today: date | None = None) -> date:
     expressions are evaluated from the innermost anchor outward.
     Numeric dates use YYYY/MM/DD or MM/DD/YYYY order, with either slashes or
     hyphens and one or two digits for the month and day.
+    Named months accept full names or abbreviations (including Sept), optional
+    periods, ordinal days, and an optional comma before the year.
 
     Raise ValueError for unrecognized expressions or dates outside years 1–9999.
     """

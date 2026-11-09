@@ -18,6 +18,7 @@ current date when `today` is omitted. Supported expressions include:
 - `next Tuesday`, `last Friday`
 - `December 1st, 2025`, `Dec 1 2025`, `2025-12-01`
 - `1 December 2025`, `1st Dec, 2025`
+- `Dec. 1, 2025`, `Jan. 15, 2026`, `Sept. 5, 2025`
 - `2025/12/04`, `2025/12/4`, `12/04/2025`, `12-04-2025`
 - `5 days before December 1st, 2025`, `1 month after next Tuesday`
 - Nested expressions such as `1 day after 2 days before tomorrow`
@@ -28,6 +29,10 @@ commas, or `and`. Years and months are combined and applied first, clamping the
 day to the destination month's last day; weeks and days are applied afterward.
 For example, one month after January 31, 2025 is February 28, 2025. Next/last
 weekdays strictly exclude the reference day.
+
+Named dates accept full month names or abbreviations, including both `Sep` and
+`Sept`, in month-first or day-first order. A period after the month, ordinal
+suffix on the day, comma before the year, and final period are optional.
 
 Numeric dates require a four-digit year and use year/month/day when the year
 comes first, or month/day/year when it comes last. Month and day may each have
