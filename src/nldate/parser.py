@@ -133,6 +133,7 @@ def parse(s: str, today: date | None = None) -> date:
     applied before weeks/days, clamping to the destination month's last day.
     Next/last weekdays always exclude the reference day. Nested before/after
     expressions are evaluated from the innermost anchor outward.
+    "Day" and "the day" before/after an anchor mean a one-day offset.
     Numeric dates use YYYY/MM/DD or MM/DD/YYYY order, with either slashes or
     hyphens and one or two digits for the month and day.
     Named months accept full names or abbreviations (including Sept), optional
@@ -147,7 +148,11 @@ def parse(s: str, today: date | None = None) -> date:
         while True:
             relative = re.fullmatch(r"(.+?) (before|after) (.+)", text)
             if relative:
-                months, days = _offset(relative[1])
+                months, days = (
+                    (0, 1)
+                    if relative[1] in {"day", "the day"}
+                    else _offset(relative[1])
+                )
                 direction = -1 if relative[2] == "before" else 1
                 pending.append((months * direction, days * direction))
                 text = relative[3]

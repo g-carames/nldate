@@ -6,6 +6,80 @@ from nldate import parse
 
 
 @pytest.mark.parametrize(
+    ("expression", "offset"),
+    [
+        ("the day after tomorrow", 2),
+        ("day after tomorrow", 2),
+        ("the day before yesterday", -2),
+        ("day before yesterday", -2),
+        ("the day after yesterday", 0),
+        ("the day before tomorrow", 0),
+        ("day after yesterday", 0),
+        ("day before tomorrow", 0),
+        ("two days from now", 2),
+        ("two days ago", -2),
+        ("  THE DAY\tAFTER\nTOMORROW ", 2),
+    ],
+)
+@pytest.mark.parametrize(
+    ("reference", "two_days_before", "two_days_after"),
+    [
+        (date(2025, 11, 10), date(2025, 11, 8), date(2025, 11, 12)),
+        (date(2025, 1, 31), date(2025, 1, 29), date(2025, 2, 2)),
+        (date(2025, 3, 1), date(2025, 2, 27), date(2025, 3, 3)),
+        (date(2024, 2, 28), date(2024, 2, 26), date(2024, 3, 1)),
+        (date(2025, 12, 31), date(2025, 12, 29), date(2026, 1, 2)),
+        (date(2026, 1, 1), date(2025, 12, 30), date(2026, 1, 3)),
+    ],
+)
+def test_conversational_dates(
+    expression: str,
+    offset: int,
+    reference: date,
+    two_days_before: date,
+    two_days_after: date,
+) -> None:
+    expected = {-2: two_days_before, 0: reference, 2: two_days_after}[offset]
+    assert parse(expression, today=reference) == expected
+
+
+@pytest.mark.parametrize(
+    ("expression", "expected"),
+    [
+        ("two days after the day after tomorrow", date(2025, 11, 14)),
+        ("the day before two days from now", date(2025, 11, 11)),
+        ("the day after the day before yesterday", date(2025, 11, 9)),
+        ("the day after December 31, 2025", date(2026, 1, 1)),
+    ],
+)
+def test_conversational_dates_in_longer_expressions(
+    expression: str, expected: date
+) -> None:
+    assert parse(expression, today=date(2025, 11, 10)) == expected
+
+
+@pytest.mark.parametrize(
+    "expression",
+    [
+        "the day after tomorrow garbage",
+        "the day before",
+        "the day after",
+        "the day",
+        "the days after tomorrow",
+        "the the day after tomorrow",
+        "someday after tomorrow",
+        "the day after tomorrow ago",
+        "the two days ago",
+        "two days from now garbage",
+        "two days ago tomorrow",
+    ],
+)
+def test_reject_malformed_conversational_dates(expression: str) -> None:
+    with pytest.raises(ValueError):
+        parse(expression, today=date(2025, 11, 10))
+
+
+@pytest.mark.parametrize(
     ("expression", "expected"),
     [
         ("a day ago", date(2025, 11, 9)),
@@ -141,6 +215,8 @@ def test_reject_invalid_relative_forms(expression: str) -> None:
         ("a week from now", date.max),
         ("in twenty years", date.max),
         ("a month ago", date.min),
+        ("the day before yesterday", date.min),
+        ("the day after tomorrow", date.max),
     ],
 )
 def test_relative_range_errors(expression: str, reference: date) -> None:
