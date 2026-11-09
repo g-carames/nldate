@@ -15,6 +15,8 @@ current date when `today` is omitted. Supported expressions include:
 
 - `today`, `tomorrow`, `yesterday`
 - `in 3 days`, `5 days ago`, `in 1 year, 2 months, and 3 days`
+- `a week ago`, `one week ago`, `in a week`, `three days from now`
+- `a month from today`, `two weeks ago`
 - `next Tuesday`, `last Friday`
 - `December 1st, 2025`, `Dec 1 2025`, `2025-12-01`
 - `1 December 2025`, `1st Dec, 2025`
@@ -24,7 +26,8 @@ current date when `today` is omitted. Supported expressions include:
 - Nested expressions such as `1 day after 2 days before tomorrow`
 
 Capitalization and repeated whitespace are ignored. Offsets accept nonnegative
-integer quantities in days, weeks, months, and years, separated by spaces,
+integer quantities, written numbers zero through twenty, or `a` with a singular
+date unit. Supported units are days, weeks, months, and years, separated by spaces,
 commas, or `and`. Years and months are combined and applied first, clamping the
 day to the destination month's last day; weeks and days are applied afterward.
 For example, one month after January 31, 2025 is February 28, 2025. Next/last
@@ -40,5 +43,5 @@ one or two digits. Use the same separator (`/` or `-`) throughout a date;
 day/month/year numeric dates and two-digit years are unsupported.
 
 Unrecognized, empty, invalid, and out-of-range expressions raise `ValueError`.
-Supported years are 1–9999. Spelled-out numbers, fractional offsets, times,
+Supported years are 1–9999. Other written quantities, fractional offsets, times,
 time zones, and other languages are unsupported.

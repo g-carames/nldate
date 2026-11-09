@@ -11,7 +11,37 @@ _MONTHS = {
 }
 _MONTHS["sept"] = 9
 _WEEKDAYS = {name.lower(): number for number, name in enumerate(calendar.day_name)}
-_OFFSET = re.compile(r"(\d+)\s+(days?|weeks?|months?|years?)")
+_NUMBERS = {
+    word: number
+    for number, word in enumerate(
+        [
+            "zero",
+            "one",
+            "two",
+            "three",
+            "four",
+            "five",
+            "six",
+            "seven",
+            "eight",
+            "nine",
+            "ten",
+            "eleven",
+            "twelve",
+            "thirteen",
+            "fourteen",
+            "fifteen",
+            "sixteen",
+            "seventeen",
+            "eighteen",
+            "nineteen",
+            "twenty",
+        ]
+    )
+}
+_OFFSET = re.compile(
+    r"([0-9]+|a|" + "|".join(_NUMBERS) + r")\s+(days?|weeks?|months?|years?)\b"
+)
 
 
 def _offset(text: str) -> tuple[int, int]:
@@ -22,7 +52,15 @@ def _offset(text: str) -> tuple[int, int]:
         match = _OFFSET.match(remaining)
         if match is None:
             raise ValueError(f"Invalid offset: {text!r}")
-        count = int(match[1])
+        quantity = match[1]
+        if quantity == "a":
+            if match[2].endswith("s"):
+                raise ValueError("An article requires a singular date unit")
+            count = 1
+        elif quantity in _NUMBERS:
+            count = _NUMBERS[quantity]
+        else:
+            count = int(quantity)
         unit = match[2].rstrip("s")
         if unit == "year":
             months += count * 12
@@ -88,7 +126,10 @@ def _anchor(text: str, today: date) -> date:
 def parse(s: str, today: date | None = None) -> date:
     """Parse an English date expression relative to ``today`` (default: today).
 
-    Offsets use nonnegative integer quantities. Years/months are combined and
+    Offsets accept nonnegative integers, words zero through twenty, and "a"
+    with a singular date unit. Use "in ...", "... ago", "... from now",
+    "... from today", or "... before/after ...". Time units are unsupported.
+    Years/months are combined and
     applied before weeks/days, clamping to the destination month's last day.
     Next/last weekdays always exclude the reference day. Nested before/after
     expressions are evaluated from the innermost anchor outward.
@@ -117,6 +158,9 @@ def parse(s: str, today: date | None = None) -> date:
             elif text.endswith(" ago"):
                 months, days = _offset(text[:-4])
                 result = _shift(reference, -months, -days)
+            elif forward := re.fullmatch(r"(.+) from (?:now|today)", text):
+                months, days = _offset(forward[1])
+                result = _shift(reference, months, days)
             else:
                 result = _anchor(text, reference)
             break
